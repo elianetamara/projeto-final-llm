@@ -1,0 +1,13 @@
+langchain>=0.1.0
+langgraph>=0.1.0
+chromadb>=0.3.23
+faiss-cpu>=1.7.4
+transformers>=4.35.0
+sentence-transformers>=2.2.2
+ollama-client>=0.1.0   # se usar Ollama Python client
+streamlit>=1.20
+uvicorn
+pydantic
+tqdm
+python-dotenv
+requests
