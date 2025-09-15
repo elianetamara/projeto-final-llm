@@ -1,8 +1,7 @@
-from ollama import Ollama
-import os, textwrap
+import ollama
+import os
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama-3.1-8b")
-ollama = Ollama()
 
 def build_prompt(question, evidence_list):
     # evidence_list: list of dict {text, meta}
@@ -15,7 +14,7 @@ def build_prompt(question, evidence_list):
     prompt += f"\nPERGUNTA: {question}\n\nInstruções: Responda em português, inclua citações do tipo [fonte i] referenciando as evidências acima. Se não houver evidência para alguma afirmação, diga 'Não encontrado nas fontes'. Não forneça conselho legal ou diagnóstico.\n"
     return prompt
 
-def generate_answer(question, evidence):
+def generate(question, evidence):
     prompt = build_prompt(question, evidence)
     # call to LLM (Ollama or other)
     resp = ollama.generate(model=OLLAMA_MODEL, prompt=prompt, max_tokens=512)

@@ -5,8 +5,7 @@ from pathlib import Path
 
 from src.retriever import Retriever
 from src.agents.answer_agent import generate_answer
-from src.agents.selfcheck_agent import check_coverage
-from src.agents.safety_agent import safety_filter, add_disclaimer
+from src.validator import check_coverage, add_disclaimer
 
 REPORT_PATH = Path("eval/report.md")
 CSV_PATH = Path("eval/tests_questions.csv")
@@ -34,12 +33,8 @@ def evaluate():
         start = time.time()
         hits = retr.retrieve(q, k=5)
         answer = generate_answer(q, hits)
-        problems = check_coverage(answer, hits)
-        ok, filtered = safety_filter(answer)
-        if not ok:
-            final_answer = filtered
-        else:
-            final_answer = add_disclaimer(filtered)
+        problems = check_coverage(answer)
+        final_answer = add_disclaimer(answer)
         latency = time.time() - start
         latencies.append(latency)
 
