@@ -4,11 +4,12 @@ import statistics
 from pathlib import Path
 
 from src.retriever import Retriever
-from src.agents.answer_agent import generate_answer
+from answer_agent import generate_answer
 from src.validator import check_coverage, add_disclaimer
 
 REPORT_PATH = Path("eval/report.md")
 CSV_PATH = Path("eval/tests_questions.csv")
+
 
 def load_tests():
     rows = []
@@ -17,6 +18,7 @@ def load_tests():
         for r in reader:
             rows.append(r)
     return rows
+
 
 def evaluate():
     retr = Retriever()
@@ -39,7 +41,8 @@ def evaluate():
         latencies.append(latency)
 
         # métricas simples
-        found_sources = [h["meta"].get("source") for h in hits if h["meta"].get("source")]
+        found_sources = [h["meta"].get("source")
+                         for h in hits if h["meta"].get("source")]
         # Precision: fontes retornadas que batem com esperado
         true_pos = sum(1 for s in found_sources if expected_src in s)
         precision = true_pos / len(found_sources) if found_sources else 0.0
@@ -81,11 +84,13 @@ def evaluate():
             f.write(f"### Pergunta: {r['question']}\n")
             f.write(f"- Expected source: {r['expected']}\n")
             f.write(f"- Found sources: {r['found_sources']}\n")
-            f.write(f"- Precision: {r['precision']:.2f}, Recall: {r['recall']:.2f}, Faithfulness: {r['faithfulness']}\n")
+            f.write(
+                f"- Precision: {r['precision']:.2f}, Recall: {r['recall']:.2f}, Faithfulness: {r['faithfulness']}\n")
             f.write(f"- Latência: {r['latency']:.2f} s\n")
             f.write(f"- Resposta (trecho): {r['answer']}\n\n")
 
     print("✅ Avaliação concluída. Relatório salvo em eval/report.md")
+
 
 if __name__ == "__main__":
     evaluate()

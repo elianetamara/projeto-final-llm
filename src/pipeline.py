@@ -1,40 +1,28 @@
-from src.agents import answer_agent
-from src import retriever, validator
+from langchain_community.tools.tavily_search import TavilySearchResults
 
-def run_chat_pipeline(user_q: str, history: list[dict] = None) -> str:
-    """
-    Executa o pipeline de chat com RAG, recebendo histórico da sessão.
-    history = [{"role": "user"/"assistant", "content": "..."}]
-    """
-    # 1. Usa histórico para contexto
-    conversation_context = "\n".join(
-        [f"{m['role'].upper()}: {m['content']}" for m in (history or [])]
-    )
+from validator import check_coverage, add_disclaimer
+from answer_agent import generate
+from src import retriever
 
-    # 2. Recupera documentos
-    hits = retriever.retrieve(user_q, k=5)
 
-    # 3. Prompt contextualizado
-    prompt = (
-        f"Contexto da conversa:\n{conversation_context}\n\n"
-        f"Pergunta atual: {user_q}\n\n"
-        "Responda usando apenas as fontes fornecidas. "
-        "Inclua citações claras. "
-        "Se não houver informação suficiente, responda que não sabe."
-    )
+def run_pipeline(type: str, user_input: str, history: list[dict] = None) -> str:
+    hits = retriever.retrieve(user_input, k=5)
+    web_hits = []
 
-    # 4. Gera resposta
-    raw_answer = answer_agent.generate(prompt, hits)
+    if (type == "detector"):
+        web_hits_raw = TavilySearchResults(k=5).run(user_input)
+        web_hits = [{"text": r, "meta": {"source": "web"}}
+                    for r in web_hits_raw]
 
-    # 5. SelfCheck + Safety
-    checked = validator.validate(raw_answer, hits)
-    final_answer = validator.apply(checked)
+    prompt_hits = hits + web_hits if type == "detector" else hits
 
-    return "final_answer"
+    raw_answer = generate(user_input, prompt_hits,
+                          history, prompt_type="detector")
 
-def run_detector_pipeline(user_q: str, history: list[dict] = None) -> str:
-    """
-    Executa o pipeline de chat com RAG, recebendo histórico da sessão.
-    history = [{"role": "user"/"assistant", "content": "..."}]
-    """
-    return "final_answer"
+    problems = check_coverage(raw_answer)
+    if problems:
+        raw_answer += "\n\n⚠️ Algumas sentenças podem estar sem referência adequada."
+
+    final_answer = add_disclaimer(raw_answer)
+
+    return final_answer

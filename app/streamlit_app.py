@@ -1,5 +1,5 @@
 import streamlit as st
-from src.pipeline import run_chat_pipeline, run_detector_pipeline
+from src.pipeline import run_pipeline
 
 st.set_page_config(
     page_title="Assistente Anti-Fraude PIX",
@@ -19,7 +19,8 @@ tab1, tab2 = st.tabs(["💬 Chat Anti-Fraude", "🔍 Detector de Golpes"])
 
 with tab1:
     st.subheader("💬 Tire suas dúvidas sobre segurança do Pix")
-    st.markdown("Pergunte sobre Pix, MED, bloqueio cautelar, etc. O chat mantém o histórico nesta sessão.")
+    st.markdown(
+        "Pergunte sobre Pix, MED, bloqueio cautelar, etc. O chat mantém o histórico nesta sessão.")
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
@@ -31,17 +32,20 @@ with tab1:
     user_q = st.chat_input("Digite sua pergunta...")
     if user_q:
         st.chat_message("user").markdown(user_q)
-        st.session_state.chat_history.append({"role": "user", "content": user_q})
+        st.session_state.chat_history.append(
+            {"role": "user", "content": user_q})
 
         with st.chat_message("assistant"):
             with st.spinner("Buscando informações..."):
                 try:
-                    answer = run_chat_pipeline(user_q, history=st.session_state.chat_history)
+                    answer = run_pipeline(
+                        "chat", user_q, history=st.session_state.chat_history)
                 except Exception as e:
                     answer = f"⚠️ Erro ao processar pergunta: {e}"
 
             st.markdown(answer)
-            st.session_state.chat_history.append({"role": "assistant", "content": answer})
+            st.session_state.chat_history.append(
+                {"role": "assistant", "content": answer})
 
 with tab2:
     st.subheader("🔍 Analisador de mensagens suspeitas")
@@ -53,7 +57,7 @@ with tab2:
     if st.button("Analisar", key="detector_button") and user_msg:
         with st.spinner("Analisando mensagem..."):
             try:
-                analysis = run_detector_pipeline(user_msg)
+                analysis = run_pipeline("detector", user_msg)
                 st.markdown("### ⚠️ Resultado da análise")
                 st.write(analysis)
             except Exception as e:
