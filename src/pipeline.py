@@ -1,7 +1,7 @@
 from langchain_community.tools.tavily_search import TavilySearchResults
 
-from validator import check_coverage, add_disclaimer
-from answer_agent import generate
+from src.validator import check_coverage, add_disclaimer
+from src.answer_agent import generate
 from src import retriever
 
 

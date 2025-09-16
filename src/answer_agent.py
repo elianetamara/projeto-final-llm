@@ -1,6 +1,6 @@
 import ollama
 import os
-from prompts import get_chat_prompt, get_detector_prompt
+from src.prompts import get_chat_prompt, get_detector_prompt
 
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama-3.1-8b")
