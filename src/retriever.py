@@ -1,22 +1,21 @@
 import os
 import chromadb
-from chromadb.config import Settings
 from docling.document_converter import DocumentConverter
+from docling_core.types.doc import ImageRefMode
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 
 class PDFIndexerRetriever:
-    def __init__(self, collection_name="pix_sources"):
-        self.client = chromadb.Client(
-            Settings(chroma_db_impl="duckdb+parquet",
-                     persist_directory="data/chroma_store")
+    def __init__(self, collection_name="pdfs_rag"):
+        self.client = chromadb.PersistentClient(
+            path="data/chroma_store"
         )
         self.collection = self.client.get_or_create_collection(
             name=collection_name)
         self.embed = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/gte-small")
+            model_name="sentence-transformers/all-MiniLM-L6-v2")
         self.converter = DocumentConverter()
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000, chunk_overlap=200)
@@ -25,7 +24,8 @@ class PDFIndexerRetriever:
         all_docs = []
         for path in pdf_paths:
             doc = self.converter.convert(path).document
-            md_text = doc.export_to_markdown()
+            md_text = doc.export_to_markdown(
+                image_mode=ImageRefMode.PLACEHOLDER, image_placeholder='')
             langchain_doc = Document(
                 page_content=md_text,
                 metadata={"source": os.path.basename(path)}
@@ -39,13 +39,12 @@ class PDFIndexerRetriever:
         texts = [d.page_content for d in docs_chunks]
         metadatas = [
             {"source": d.metadata.get("source", "pdf"),
-             "page": d.metadata.get("page", None)}
+             "page": d.metadata.get("page", "not found")}
             for d in docs_chunks
         ]
         ids = [f"doc_{i}" for i in range(len(texts))]
 
         self.collection.add(documents=texts, metadatas=metadatas, ids=ids)
-        self.client.persist()
         print(f"Textos indexados no Chroma: {len(texts)}")
 
     def build_index_from_folder(self, folder_path):
@@ -78,7 +77,7 @@ if __name__ == "__main__":
 
     retriever.build_index_from_folder("data/pdfs")
 
-    query = "O que é bloqueio cautelar do Pix?"
+    query = "O que é autenticação?"
     results = retriever.retrieve(query, k=3)
 
     print("\n🔎 Resultados da busca:")
