@@ -11,6 +11,12 @@ transformers==4.56.0
 docling==2.52.0
 ollama==0.5.3
 streamlit==1.37.0
+docling-core>=2.48
+tabulate>=0.9,<1
+tavily-python
+tiktoken
+tldextract
+requests_file
 
 overrides
 numpy>=1.22.5,<2

@@ -3,7 +3,7 @@ import os
 from src.prompts import get_chat_prompt, get_detector_prompt
 
 
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama-3.1-8b")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 
 
 def generate(user_query: str, hits: list[dict], history: list[dict], prompt_type: str = "chat") -> str:
@@ -19,6 +19,6 @@ def generate(user_query: str, hits: list[dict], history: list[dict], prompt_type
         history=history,
     )
 
-    resp = ollama.generate(model=OLLAMA_MODEL, prompt=prompt, max_tokens=512)
-    text = resp['text']
+    resp = ollama.generate(model=OLLAMA_MODEL, prompt=prompt, options={"num_predict": 256})
+    text = resp['response']
     return text
