@@ -7,11 +7,11 @@ PoC open-source de assistente RAG + agentes para orientar cidadãos sobre preven
 1. Clonar:
    git clone <repo-url>
 2. Criar venv:
-   python -m venv .venv && source .venv/bin/activate
+   python3 -m venv .venv && source .venv/bin/activate
 3. Instalar:
    pip install -r requirements.txt
    ou
-   python3.11 -m pip install --no-cache --no-deps -r requirements.txt
+   python3 -m pip install --no-cache --no-deps -r requirements.txt
 4. Ingestão:
    python src/retriever.py
 5. Rodar app:

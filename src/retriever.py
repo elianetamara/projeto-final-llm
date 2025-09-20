@@ -12,9 +12,7 @@ class PDFIndexerRetriever:
     def __init__(self, collection_name: str = "pdfs_rag"):
         # Chroma persistente
         self.client = chromadb.PersistentClient(path="data/chroma_store")
-
         
-        # >>> LIGA O EMBEDDING À COLLECTION (opção 1 – recomendada)
         ef = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
@@ -23,7 +21,7 @@ class PDFIndexerRetriever:
         #     name=collection_name,
         #     embedding_function=ef,  # <- chave: a collection agora sabe embedar
         # )
-        self.client.delete_collection(name="pdfs_rag")
+        # self.client.delete_collection(name="pdfs_rag")
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
             embedding_function=ef,
@@ -33,6 +31,12 @@ class PDFIndexerRetriever:
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000, chunk_overlap=200
         )
+
+    def ensure_ready(self):
+        # checagem leve; falha cedo se banco estiver vazio
+        if self.collection.count() == 0:
+            return True
+        return False
 
     def load_pdfs(self, pdf_paths):
         all_docs = []
@@ -119,9 +123,6 @@ class PDFIndexerRetriever:
         # ordenar por similaridade (maior é melhor)
         hits.sort(key=lambda h: h["similarity"], reverse=True)
         return hits
-
-
-
 
 if __name__ == "__main__":
     retriever = PDFIndexerRetriever()

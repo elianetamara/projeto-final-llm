@@ -19,6 +19,6 @@ def generate(user_query: str, hits: list[dict], history: list[dict], prompt_type
         history=history,
     )
 
-    resp = ollama.generate(model=OLLAMA_MODEL, prompt=prompt, options={"num_predict": 256})
+    resp = ollama.generate(model=OLLAMA_MODEL, prompt=prompt, options={"num_predict": 800})
     text = resp['response']
     return text

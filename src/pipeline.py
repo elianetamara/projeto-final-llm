@@ -16,8 +16,9 @@ def get_retriever() -> PDFIndexerRetriever:
     global _retriever
     if _retriever is None:
         _retriever = PDFIndexerRetriever()
-        # Se quiser indexar automaticamente em dev:
-        # _retriever.build_index_from_folder("data/pdfs")
+        if _retriever.ensure_ready():
+            _retriever.build_index_from_folder("data/pdfs")
+            print("Índice carregado e pronto.")
     return _retriever
 
 
@@ -72,7 +73,7 @@ def run_pipeline(
 
     # 1) Busca local (Chroma)
     hits = retr.retrieve(user_input, k=5)
-
+    print("Local hits:", hits)
     # 2) Opcional: busca web apenas no modo detector
     web_hits = _maybe_web_search(user_input, k=5) if mode == "detector" else []
 
