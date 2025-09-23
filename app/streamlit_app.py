@@ -2,25 +2,25 @@ import streamlit as st
 from src.pipeline import run_pipeline
 
 st.set_page_config(
-    page_title="Assistente Anti-Fraude PIX",
+    page_title="Assistente Anti-Fraude",
     page_icon="🛡️",
     layout="wide"
 )
 
-st.title("🛡️ Assistente Anti-Fraude PIX")
+st.title("🛡️ Assistente Anti-Fraude")
 st.markdown(
-    "Este assistente ajuda a entender **mecanismos de segurança do Pix** "
+    "Este assistente ajuda a entender **mecanismos de segurança** "
     "e a **identificar mensagens suspeitas de golpes**.\n\n"
     "**Aviso**: Este sistema é apenas informativo e não substitui a "
     "orientação oficial do seu banco ou autoridades."
 )
 
-tab1, tab2 = st.tabs(["💬 Chat Anti-Fraude", "🔍 Detector de Golpes"])
+tab1, tab2 = st.tabs(["💬 Chat Mecanismos de Segurança", "🔍 Detector de Golpes"])
 
 with tab1:
-    st.subheader("💬 Tire suas dúvidas sobre segurança do Pix")
+    st.subheader("💬 Tire suas dúvidas sobre segurança digital")
     st.markdown(
-        "Pergunte sobre Pix, MED, bloqueio cautelar, etc. O chat mantém o histórico nesta sessão.")
+        "Pergunte sobre Pix, MED, autenticação dupla, etc")
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []

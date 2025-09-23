@@ -22,6 +22,7 @@ class PDFIndexerRetriever:
         #     embedding_function=ef,  # <- chave: a collection agora sabe embedar
         # )
         # self.client.delete_collection(name="pdfs_rag")
+
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
             embedding_function=ef,
@@ -33,7 +34,6 @@ class PDFIndexerRetriever:
         )
 
     def ensure_ready(self):
-        # checagem leve; falha cedo se banco estiver vazio
         if self.collection.count() == 0:
             return True
         return False
@@ -44,12 +44,11 @@ class PDFIndexerRetriever:
             dldoc = self.converter.convert(path).document
             basename = os.path.basename(path)
 
-            # número total de páginas
             n_pages = dldoc.num_pages()
 
             for p in range(1, n_pages + 1):
                 md_text = dldoc.export_to_markdown(
-                    page_no=p,  # <-- exporta só a página p
+                    page_no=p,  
                     image_mode=ImageRefMode.PLACEHOLDER,
                     image_placeholder=''
                 )
@@ -65,7 +64,6 @@ class PDFIndexerRetriever:
 
 
     def _stable_id(self, text: str, meta: dict) -> str:
-        # ID estável para evitar duplicar ao reindexar
         base = f"{meta.get('source','pdf')}|{meta.get('page','')}"
         h = hashlib.sha1((base + "|" + text.strip()).encode("utf-8")).hexdigest()
         return f"doc_{h}"
@@ -102,17 +100,17 @@ class PDFIndexerRetriever:
         res = self.collection.query(
             query_texts=[query],
             n_results=k,
-            include=["documents", "metadatas", "distances"],  # <- sem "ids"
+            include=["documents", "metadatas", "distances"],  
         )
 
         docs = res.get("documents", [[]])[0]
         metas = res.get("metadatas", [[]])[0]
         dists = res.get("distances", [[]])[0]
-        ids   = res.get("ids", [[]])[0]   # <- pegue aqui, não no include
+        ids   = res.get("ids", [[]])[0]   
 
         hits = []
         for _id, doc, meta, dist in zip(ids, docs, metas, dists):
-            sim = 1.0 - float(dist)  # se métrica = distância de cosseno
+            sim = 1.0 - float(dist)  
             hits.append({
                 "id": _id,
                 "text": doc,
@@ -120,7 +118,6 @@ class PDFIndexerRetriever:
                 "distance": dist,
                 "similarity": sim
             })
-        # ordenar por similaridade (maior é melhor)
         hits.sort(key=lambda h: h["similarity"], reverse=True)
         return hits
 

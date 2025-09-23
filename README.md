@@ -1,6 +1,6 @@
-# Assistente Anti-Fraude PIX
+# Assistente Anti-Fraude
 
-PoC open-source de assistente RAG + agentes para orientar cidadãos sobre prevenção e reação a fraudes PIX, com respostas ancoradas em fontes oficiais (Banco Central, Polícia, PROCON).
+PoC open-source de assistente RAG + agentes para orientar cidadãos sobre prevenção e reação a fraudes, com respostas ancoradas em fontes oficiais (Banco Central).
 
 ## Setup (mínimo)
 
@@ -9,14 +9,10 @@ PoC open-source de assistente RAG + agentes para orientar cidadãos sobre preven
 2. Criar venv:
    python3 -m venv .venv && source .venv/bin/activate
 3. Instalar:
-   pip install -r requirements.txt
-   ou
    python3 -m pip install --no-cache --no-deps -r requirements.txt
 4. Ingestão:
-   python src/retriever.py
+   python3 src/retriever.py
 5. Rodar app:
-   streamlit run app/streamlit_app.py
-   ou
    PYTHONPATH=. streamlit run app/streamlit_app.py
 
 ## Execução local com Ollama (opcional)
@@ -27,4 +23,4 @@ PoC open-source de assistente RAG + agentes para orientar cidadãos sobre preven
 
 ## Avaliação
 
-python eval/run_eval.py
+1. PYTHONPATH=. python eval/eval_ragas.py --data eval/eval_questions.jsonl --mode chat --k 8

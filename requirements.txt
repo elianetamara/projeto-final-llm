@@ -17,7 +17,18 @@ tavily-python
 tiktoken
 tldextract
 requests_file
+ragas
+datasets
+evaluate
+appdirs
+langchain_openai
+openai
+instructor
+jiter
+docstring_parser
 
+pandas
+psutil
 overrides
 numpy>=1.22.5,<2
 tqdm>=4.65.0
