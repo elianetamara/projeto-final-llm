@@ -134,7 +134,6 @@ def _extract_scores(result_obj):
         except Exception:
             return None
 
-    # 1) DataFrame padrão
     try:
         df_scores = result_obj.to_pandas()
         if isinstance(df_scores, pd.DataFrame):
@@ -152,7 +151,6 @@ def _extract_scores(result_obj):
     except Exception:
         pass
 
-    # 2) Dict interno
     d = getattr(result_obj, "_scores_dict", None)
     if isinstance(d, dict):
         out = {}
@@ -164,7 +162,6 @@ def _extract_scores(result_obj):
         if out:
             return out
 
-    # 3) Lista de dicts
     try:
         out = {}
         for m in result_obj:
@@ -177,7 +174,6 @@ def _extract_scores(result_obj):
     except Exception:
         pass
 
-    # 4) .scores
     d2 = getattr(result_obj, "scores", None)
     if isinstance(d2, dict):
         out = {}
@@ -253,7 +249,6 @@ def main():
 
         ctx_hits = retr.retrieve(q, k=args.k)
         contexts_full = [h.get("text", "") for h in ctx_hits]
-        # limite geral (não-HHEM). Para HHEM vamos truncar mais à frente:
         contexts = [c[:args.max_ctx_chars] for c in contexts_full[:args.max_ctx_k]]
 
         t0 = time.perf_counter()
@@ -296,10 +291,8 @@ def main():
         _write_report(args, {}, latencies, cpu_usages, ram_usages, df, args.outdir, os.getenv("OLLAMA_MODEL", "phi3:mini"), dummy_rc)
         return
 
-    # Dataset base
     ragas_ds_base = Dataset.from_pandas(df_eval[["question","contexts","answer","ground_truths"]])
 
-    # Judge LLM + embeddings
     try:
         from langchain_huggingface import HuggingFaceEmbeddings
     except Exception:
@@ -313,13 +306,12 @@ def main():
     print(f"[RAGAS] Itens avaliados: {len(df_eval)}")
     run_config = RunConfig(
         timeout=600,
-        max_workers=8,      # ajuste conforme sua máquina
+        max_workers=8,      
         max_retries=5,
         max_wait=30,
         log_tenacity=True
     )
 
-    # ----- SELEÇÃO DE UMA ÚNICA MÉTRICA -----
     if args.metric == "answer_relevancy":
         metric_obj = answer_relevancy
         metric_name = "answer_relevancy"
@@ -328,7 +320,6 @@ def main():
     elif args.metric == "faithfulness_hhem":
         metric_obj = FaithfulnesswithHHEM()
         metric_name = "faithfulness_hhem"
-        # Truncagem agressiva para evitar erro "Token indices ... 980 > 512"
         df_hhem = df_eval.copy()
         df_hhem["contexts"] = df_hhem["contexts"].apply(_truncate_for_hhem)
         ragas_ds = Dataset.from_pandas(df_hhem[["question","contexts","answer","ground_truths"]])
@@ -336,7 +327,6 @@ def main():
     else:
         raise ValueError(f"Métrica não suportada: {args.metric}")
 
-    # ----- EXECUÇÃO -----
     try:
         print(f"[RAGAS] Avaliando {metric_name} ...")
         res = evaluate(
@@ -348,13 +338,11 @@ def main():
         )
         scores = _extract_scores(res)
         agg = {}
-        # tenta pegar pelo nome; cobre variações
         for k in (metric_name, "faithfulness_with_hhem", "answer_relevancy"):
             if k in scores:
                 agg[k] = scores[k]
                 break
         if not agg:
-            # pega qualquer coisa que veio, só pra não perder
             for k, v in scores.items():
                 agg[k] = v
     except Exception as e:
