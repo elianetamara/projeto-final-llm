@@ -1,11 +1,11 @@
-# eval/eval_ragas.py
+# src/eval_ragas.py
 from __future__ import annotations
 import os, json, time, argparse, statistics, pathlib
 from typing import List, Dict, Any
 
 from ragas import RunConfig, evaluate
-from ragas.metrics import faithfulness, answer_relevancy
-from ragas.metrics import FaithfulnesswithHHEM
+from ragas.metrics import answer_relevancy
+from ragas.metrics import FaithfulnesswithHHEM  # usamos quando --metric=faithfulness_hhem
 
 import pandas as pd
 from datasets import Dataset
@@ -62,7 +62,6 @@ def _write_report(args, agg, latencies, cpu_usages, ram_usages, df_all, outdir, 
     }).to_parquet(raw_path, index=False)
 
     DISPLAY = {
-        "faithfulness": "Faithfulness",
         "faithfulness_hhem": "Faithfulness (HHEM)",
         "faithfulness_with_hhem": "Faithfulness (HHEM)",
         "answer_relevancy": "Answer Relevancy",
@@ -81,6 +80,7 @@ def _write_report(args, agg, latencies, cpu_usages, ram_usages, df_all, outdir, 
 
 **Modo:** `{args.mode}`  
 **K (retrieve):** {args.k}  
+**Métrica:** `{args.metric}`  
 **LLM juiz:** `{llm_model}`  
 
 {chr(10).join(lines)}
@@ -90,9 +90,6 @@ def _write_report(args, agg, latencies, cpu_usages, ram_usages, df_all, outdir, 
 - Latência p95 (s): **{p95_latency:.3f}**
 - CPU média (%): **{('%.1f' % mean_cpu) if mean_cpu is not None else 'n/a'}**
 - RAM média (MB): **{('%.1f' % mean_ram) if mean_ram is not None else 'n/a'}**
-
-## Robustez
-- % respostas “NÃO ENCONTREI BASE” (todas): **{no_base_ratio*100:.1f}%**
 """
     out_md = os.path.join(outdir, "eval_report.md")
     with open(out_md, "w", encoding="utf-8") as f:
@@ -101,10 +98,7 @@ def _write_report(args, agg, latencies, cpu_usages, ram_usages, df_all, outdir, 
     print("==> Resultados brutos em:", raw_path)
 
 def _extract_scores(result_obj):
-    """
-    Extrai métricas do objeto retornado por ragas.evaluate() (versões novas/antigas).
-    Se vierem listas/arrays, usa a média.
-    """
+    """Extrai métricas de ragas.evaluate() (versões novas/antigas). Usa média se vier lista/array."""
     import numpy as np
 
     def _to_float_mean(x):
@@ -112,7 +106,7 @@ def _extract_scores(result_obj):
             return None
         if isinstance(x, (int, float)):
             return float(x)
-        if hasattr(x, "item"): 
+        if hasattr(x, "item"):
             try:
                 return float(x.item())
             except Exception:
@@ -140,6 +134,7 @@ def _extract_scores(result_obj):
         except Exception:
             return None
 
+    # 1) DataFrame padrão
     try:
         df_scores = result_obj.to_pandas()
         if isinstance(df_scores, pd.DataFrame):
@@ -157,6 +152,7 @@ def _extract_scores(result_obj):
     except Exception:
         pass
 
+    # 2) Dict interno
     d = getattr(result_obj, "_scores_dict", None)
     if isinstance(d, dict):
         out = {}
@@ -168,6 +164,7 @@ def _extract_scores(result_obj):
         if out:
             return out
 
+    # 3) Lista de dicts
     try:
         out = {}
         for m in result_obj:
@@ -180,6 +177,7 @@ def _extract_scores(result_obj):
     except Exception:
         pass
 
+    # 4) .scores
     d2 = getattr(result_obj, "scores", None)
     if isinstance(d2, dict):
         out = {}
@@ -197,7 +195,7 @@ def _truncate_for_hhem(contexts: List[str]) -> List[str]:
     try:
         max_chars = int(os.getenv("HHEM_CTX_CHARS", "400"))
     except Exception:
-        max_chars = 600
+        max_chars = 400
     try:
         max_k = int(os.getenv("HHEM_CTX_K", "2"))
     except Exception:
@@ -216,14 +214,18 @@ def main():
     ap.add_argument("--mode", default="chat", choices=["chat","detector"])
     ap.add_argument("--outdir", default="reports")
     ap.add_argument("--k", type=int, default=8)
-    ap.add_argument("--max_ctx_chars", type=int, default=1000, help="truncate cada contexto para no máximo N caracteres")
+    ap.add_argument("--max_ctx_chars", type=int, default=1000, help="truncate cada contexto para no máximo N caracteres (para o juiz)")
     ap.add_argument("--max_ctx_k", type=int, default=3, help="quantos contextos por item passar ao juiz")
+    ap.add_argument("--metric", required=True, choices=["answer_relevancy", "faithfulness_hhem"], help="Escolha UMA métrica para esta execução")
     args = ap.parse_args()
 
+    # outdir específico por métrica (para não sobrepor)
+    args.outdir = os.path.join(args.outdir, args.metric)
     pathlib.Path(args.outdir).mkdir(parents=True, exist_ok=True)
 
     items = load_jsonl(args.data)
 
+    # Retriever pronto / ensure
     retr = PDFIndexerRetriever()
     try:
         retr.ensure_ready()
@@ -251,6 +253,7 @@ def main():
 
         ctx_hits = retr.retrieve(q, k=args.k)
         contexts_full = [h.get("text", "") for h in ctx_hits]
+        # limite geral (não-HHEM). Para HHEM vamos truncar mais à frente:
         contexts = [c[:args.max_ctx_chars] for c in contexts_full[:args.max_ctx_k]]
 
         t0 = time.perf_counter()
@@ -293,12 +296,14 @@ def main():
         _write_report(args, {}, latencies, cpu_usages, ram_usages, df, args.outdir, os.getenv("OLLAMA_MODEL", "phi3:mini"), dummy_rc)
         return
 
+    # Dataset base
     ragas_ds_base = Dataset.from_pandas(df_eval[["question","contexts","answer","ground_truths"]])
 
+    # Judge LLM + embeddings
     try:
         from langchain_huggingface import HuggingFaceEmbeddings
     except Exception:
-        from langchain_community.embeddings import HuggingFaceEmbeddings 
+        from langchain_community.embeddings import HuggingFaceEmbeddings
     from langchain_community.chat_models import ChatOllama
 
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "phi3:mini")
@@ -306,54 +311,55 @@ def main():
     emb = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
     print(f"[RAGAS] Itens avaliados: {len(df_eval)}")
-
     run_config = RunConfig(
         timeout=600,
-        max_workers=8,      
+        max_workers=8,      # ajuste conforme sua máquina
         max_retries=5,
         max_wait=30,
         log_tenacity=True
     )
 
-    agg: Dict[str, float] = {}
+    # ----- SELEÇÃO DE UMA ÚNICA MÉTRICA -----
+    if args.metric == "answer_relevancy":
+        metric_obj = answer_relevancy
+        metric_name = "answer_relevancy"
+        ragas_ds = ragas_ds_base
 
-    metrics_to_run = [
-        FaithfulnesswithHHEM(),  
-        answer_relevancy,
-    ]
+    elif args.metric == "faithfulness_hhem":
+        metric_obj = FaithfulnesswithHHEM()
+        metric_name = "faithfulness_hhem"
+        # Truncagem agressiva para evitar erro "Token indices ... 980 > 512"
+        df_hhem = df_eval.copy()
+        df_hhem["contexts"] = df_hhem["contexts"].apply(_truncate_for_hhem)
+        ragas_ds = Dataset.from_pandas(df_hhem[["question","contexts","answer","ground_truths"]])
 
-    for metric in metrics_to_run:
-        try:
-            metric_name = getattr(metric, "name", str(metric))
-            print(f"[RAGAS] Avaliando {metric_name} ...")
+    else:
+        raise ValueError(f"Métrica não suportada: {args.metric}")
 
-            if isinstance(metric, FaithfulnesswithHHEM):
-                df_hhem = df_eval.copy()
-                df_hhem["contexts"] = df_hhem["contexts"].apply(_truncate_for_hhem)
-                ragas_ds = Dataset.from_pandas(df_hhem[["question","contexts","answer","ground_truths"]])
-            else:
-                ragas_ds = ragas_ds_base
-
-            res = evaluate(
-                ragas_ds,
-                metrics=[metric],
-                llm=llm,
-                embeddings=emb,
-                run_config=run_config
-            )
-            scores = _extract_scores(res)
-            if metric_name in scores:
-                agg[metric_name] = scores[metric_name]
-            else:
-                for k in ("faithfulness_hhem", "faithfulness_with_hhem", "faithfulness", "answer_relevancy"):
-                    if k in scores:
-                        agg[k] = scores[k]
-                        break
-                else:
-                    print(f"[WARN] métrica {metric_name} não retornou score. Scores vistos: {list(scores.keys())}")
-
-        except Exception as e:
-            print(f"[WARN] métrica {getattr(metric, 'name', str(metric))} falhou: {e}")
+    # ----- EXECUÇÃO -----
+    try:
+        print(f"[RAGAS] Avaliando {metric_name} ...")
+        res = evaluate(
+            ragas_ds,
+            metrics=[metric_obj],
+            llm=llm,
+            embeddings=emb,
+            run_config=run_config
+        )
+        scores = _extract_scores(res)
+        agg = {}
+        # tenta pegar pelo nome; cobre variações
+        for k in (metric_name, "faithfulness_with_hhem", "answer_relevancy"):
+            if k in scores:
+                agg[k] = scores[k]
+                break
+        if not agg:
+            # pega qualquer coisa que veio, só pra não perder
+            for k, v in scores.items():
+                agg[k] = v
+    except Exception as e:
+        print(f"[WARN] métrica {metric_name} falhou: {e}")
+        agg = {}
 
     _write_report(args, agg, latencies, cpu_usages, ram_usages, df, args.outdir, OLLAMA_MODEL, run_config)
 
