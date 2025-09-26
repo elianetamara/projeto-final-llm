@@ -3,11 +3,11 @@ from src.pipeline import run_pipeline
 
 st.set_page_config(
     page_title="Assistente Anti-Fraude",
-    page_icon="🛡️",
+    page_icon="",
     layout="wide"
 )
 
-st.title("🛡️ Assistente Anti-Fraude")
+st.title("Assistente Anti-Fraude")
 st.markdown(
     "Este assistente ajuda a entender **mecanismos de segurança** "
     "e a **identificar mensagens suspeitas de golpes**.\n\n"
@@ -20,7 +20,7 @@ tab1, tab2 = st.tabs(["💬 Chat Mecanismos de Segurança", "🔍 Detector de Go
 with tab1:
     st.subheader("💬 Tire suas dúvidas sobre segurança digital")
     st.markdown(
-        "Pergunte sobre Pix, MED, autenticação dupla, etc")
+        "Pergunte sobre autenticação dupla, phishing, privaciadde de dados, ...")
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
