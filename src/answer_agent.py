@@ -5,8 +5,13 @@ import os
 
 import ollama
 from src.prompts import get_chat_prompt, get_detector_prompt
+from ollama import Client
 
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral:7b")
+
+def _ollama_client() -> Client:
+    base_url = os.getenv("OLLAMA_BASE_URL", "http://150.165.75.163/ollama/")
+    return Client(host=base_url)
 
 
 def _format_evidence(hits: List[Dict]) -> str:
@@ -30,14 +35,15 @@ def generate(user_query: str, hits: List[Dict], history: List[Dict], prompt_type
     local_context = _format_evidence(hits)
     prompt_template = get_chat_prompt() if prompt_type == "chat" else get_detector_prompt()
     prompt = prompt_template.format(query=user_query, local_context=local_context, history=history)
+    
+    client = _ollama_client()
 
-    resp = ollama.generate(
+    resp = client.generate(
         model=OLLAMA_MODEL,
         prompt=prompt,
         options={"num_predict": 800, "temperature": 0}
     )
     return resp["response"]
-
 
 def generate_answer(user_query: str, evidences: List[Dict], history: List[Dict], prompt_type: str = "chat") -> str:
     """

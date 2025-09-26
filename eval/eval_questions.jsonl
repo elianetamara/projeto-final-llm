@@ -1,5 +1,10 @@
-{"id":"Q01","intent":"chat","question":"Quais cuidados essenciais devo adotar ao usar aplicativos de banco no celular?","tags":["banco","mobile","senhas","biometria"],"difficulty":"easy","answer_hint":"Senha forte no desbloqueio; combinar senha forte + biometria; não salvar senhas; instalar apenas apps oficiais."}
-{"id":"Q02","intent":"chat","question":"Como reduzir prejuízos financeiros caso alguém tente fazer transferências indevidas (ex.: PIX, TED, DOC)?","tags":["limites","prevenção","fraude"],"difficulty":"medium","answer_hint":"Ajustar/reduzir limites; acompanhar notificações; usar canais oficiais."}
-{"id":"Q03","intent":"chat","question":"O que devo conferir antes de pagar um boleto para evitar golpes?","tags":["boleto","pagamentos"],"difficulty":"easy","answer_hint":"Conferir beneficiário; dígitos iniciais do banco emissor; valor; preferir DDA/boletos registrados."}
-{"id":"Q04","intent":"chat","question":"Quais práticas recomendadas de backup para não perder meus dados no celular e no computador?","tags":["backup","nuvem","automação"],"difficulty":"easy","answer_hint":"Backups automáticos; cópias adicionais; múltiplas cópias em locais distintos; proteger backups."}
-{"id":"Q05","intent":"chat","question":"Como proteger os dados dos meus backups contra acesso indevido?","tags":["backup","criptografia","segurança"],"difficulty":"medium","answer_hint":"Criptografia nas mídias e na nuvem; não deixar mídias sempre conectadas; guardar em local seguro; HTTPS e 2FA."}
+{"id":"Q01","intent":"chat","question":"Oque é autenticação?"}
+{"id":"Q02","intent":"chat","question":"Como proteger melhor minhas contas?"}
+{"id":"Q03","intent":"chat","question":"OOque é autenticação de dois fatores?"}
+{"id":"Q04","intent":"chat","question":"oque é backup?"}
+{"id":"Q05","intent":"chat","question":"Porque fazer backup é importante?"}
+{"id":"Q06","intent":"chat","question":"Como proteger meu celular e tablet?"}
+{"id":"Q07","intent":"chat","question":"Oque é um código malicioso?"}
+{"id":"Q08","intent":"chat","question":"Como evitar códigos maliciosos?"}
+{"id":"Q09","intent":"chat","question":"Oque fazer se meu celular for roubado?"}
+{"id":"Q10","intent":"chat","question":"Veja aqui como se proteger de golpes aplicados na Internet?"}

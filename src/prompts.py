@@ -4,7 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 def get_chat_prompt():
     return ChatPromptTemplate.from_template(r"""
 [SISTEMA]
-Você é um assistente antifraude. Responda **estritamente** com base no CONTEXTO NUMERADO.
+Você é um assistente antifraude. Responda **estritamente** com base no CONTEXTO.
 Se não houver base suficiente, responda **exatamente**: "NÃO ENCONTREI BASE".
 Não use conhecimento externo.
 
@@ -18,13 +18,12 @@ Não use conhecimento externo.
 {local_context}
 
 [REGRAS]
-- Cada frase factual deve ter ao menos uma citação no formato [n].
+- Cada frase factual deve ter ao menos uma citação.
 - Se um fato não estiver no CONTEXTO, **não o mencione**.
 - Português do Brasil. Sem passo-a-passo sensível.
 - Seja conciso.
 
 [SAÍDA]
-Texto conciso com citações [n] ao final das frases.
 """)
 
 def get_detector_prompt():

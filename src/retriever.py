@@ -61,8 +61,6 @@ class PDFIndexerRetriever:
         return all_docs
 
 
-
-
     def _stable_id(self, text: str, meta: dict) -> str:
         base = f"{meta.get('source','pdf')}|{meta.get('page','')}"
         h = hashlib.sha1((base + "|" + text.strip()).encode("utf-8")).hexdigest()
